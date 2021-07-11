@@ -385,7 +385,6 @@ class Blockchain(Logger):
             if not skip_auxpow:
                 _pow_hash = auxpow.hash_parent_header(header)
                 block_hash_as_num = int.from_bytes(bfh(_pow_hash), byteorder='big')
-                print("OLMASI_GEREKEN_TARGET   :   ", block_hash_as_num)
                 if block_hash_as_num > target:
                     raise Exception(f"insufficient proof of work: {block_hash_as_num} vs target {target}")
 
@@ -574,46 +573,31 @@ class Blockchain(Logger):
             return hash_header(header)
 
     def get_target(self, index: int) -> int:
-        print("GET_TARGET_INDEX  :   ",index)
-        print("constants.net.max_checkpoint()",constants.net.max_checkpoint())
         # compute target from chunk x, used in chunk x+1
         if constants.net.TESTNET:
             return 0
         if index == -1:
-            print("DENEME0")
             return MAX_TARGET
         if index + 1 == (constants.net.max_checkpoint() + 1) // 2016:
-            print("DENEME1")
             return self.bits_to_target(constants.net.CHECKPOINTS['last_bits'])
         # new target
         if index == constants.net.max_checkpoint() // 2016:
-            print("DENEME2")
             first_timestamp = 1386526585
         else:
-            print("DENEME4")
             first = self.read_header(index * 2016)
             if not first:
                 raise MissingHeader()
             first_timestamp = first.get('timestamp')
         last = self.read_header(index * 2016 + 2015)
-        print("LAST  :   ", last)
         if not last:
             raise MissingHeader()
         bits = last.get('bits')
-        print("BITS  :   ", bits)
         target = self.bits_to_target(bits)
-        print("TARGET  :  ",target)
         nActualTimespan = last.get('timestamp') - first_timestamp
-        print("nActualTimespan00  :   ", nActualTimespan)
         nTargetTimespan = 4 * 60 * 60
-        print("nActualTimespan00  :   ", nTargetTimespan)
         nActualTimespan = max(nActualTimespan, nTargetTimespan // 4)
-        print("nActualTimespan11  :   ", nActualTimespan)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
-        print("nActualTimespan22  :   ", nActualTimespan)
         new_target = min(MAX_TARGET, (target * nActualTimespan) // nTargetTimespan)
-        print("NEW_TARGET  :   ", new_target)
-        print("MAX_TARGET",MAX_TARGET)
         # not any target can be represented in 32 bits:
         new_target = self.bits_to_target(self.target_to_bits(new_target))
         return new_target
@@ -709,7 +693,6 @@ class Blockchain(Logger):
             data = bfh(hexdata)
             start_height = idx * 2016
             chunk = HeaderChunk(start_height, data)
-            print("CHUNK  : ",chunk)
             if not proof_was_provided:
                 self.verify_chunk(idx, chunk)
             self.save_chunk(idx, chunk.stripped_data)
